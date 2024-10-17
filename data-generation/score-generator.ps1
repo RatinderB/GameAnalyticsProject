@@ -1,7 +1,7 @@
-﻿$ehNameSpace = "DataSolutionsEventHub"
-$ehName = "datasolutionshub"
-$keyname = "senderPolicy"
-$key = "cylVKHx6lbAj5KZvREstLas1XEmJhhBaQ+AEhAm1RvE="
+﻿$ehNameSpace = "<event-hub-namespace>"
+$ehName = "<event-hub-name>"
+$keyname = "<policy-name>"
+$key = "<policy-key>"
 
 # Make no changes beyond this point
 

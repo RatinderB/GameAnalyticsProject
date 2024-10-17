@@ -1,0 +1,62 @@
+CREATE SCHEMA GameAnalytics;
+
+CREATE TABLE GameAnalytics.StagingPlayerScores
+(
+    GameplayID NVARCHAR(50) NOT NULL,
+    Player NVARCHAR(50) NOT NULL,
+    Game NVARCHAR(50) NOT NULL,
+    Score INT NOT NULL,
+    Timestamp DATETIME2 NOT NULL
+)
+WITH
+(
+    DISTRIBUTION = ROUND_ROBIN,
+    HEAP
+);
+
+
+CREATE TABLE GameAnalytics.DimPlayer
+(
+    PlayerID INT IDENTITY(1,1) NOT NULL,
+    PlayerName NVARCHAR(50) NOT NULL,
+    IsCurrent BIT NOT NULL,
+    EffectiveDate DATETIME2 NOT NULL,
+    ExpiryDate DATETIME2 NULL
+)
+WITH
+(
+    DISTRIBUTION = REPLICATE,
+    CLUSTERED COLUMNSTORE INDEX
+);
+
+
+
+CREATE TABLE GameAnalytics.DimGame
+(
+    GameID INT IDENTITY(1,1) NOT NULL,
+    GameName NVARCHAR(50) NOT NULL,
+    IsCurrent BIT NOT NULL,
+    EffectiveDate DATETIME2 NOT NULL,
+    ExpiryDate DATETIME2 NULL
+)
+WITH
+(
+    DISTRIBUTION = REPLICATE,
+    CLUSTERED COLUMNSTORE INDEX
+);
+
+
+
+CREATE TABLE GameAnalytics.FactPlayerScores
+(
+    GameplayID NVARCHAR(50) NOT NULL,
+    PlayerID INT NOT NULL,
+    GameID INT NOT NULL,
+    Score INT NOT NULL,
+    Timestamp DATETIME2 NOT NULL
+)
+WITH
+(
+    DISTRIBUTION = HASH(GameplayID),
+    CLUSTERED COLUMNSTORE INDEX
+);

@@ -1,0 +1,135 @@
+{
+    "name": "DataProcessingPipeline",
+    "properties": {
+        "activities": [
+            {
+                "name": "InsertDimPlayer",
+                "type": "Script",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "linkedServiceName": {
+                    "referenceName": "LS_SQLPool_DataSolutions",
+                    "type": "LinkedServiceReference"
+                },
+                "typeProperties": {
+                    "scripts": [
+                        {
+                            "type": "Query",
+                            "text": "INSERT INTO GameAnalytics.DimPlayer (PlayerName, IsCurrent, EffectiveDate)\nSELECT DISTINCT s.Player, 1, GETDATE()\nFROM GameAnalytics.StagingPlayerScores s\nLEFT JOIN GameAnalytics.DimPlayer d ON s.Player = d.PlayerName\nWHERE d.PlayerName IS NULL;\n"
+                        }
+                    ],
+                    "scriptBlockExecutionTimeout": "02:00:00"
+                }
+            },
+            {
+                "name": "InsertDimGame",
+                "type": "Script",
+                "dependsOn": [
+                    {
+                        "activity": "InsertDimPlayer",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "linkedServiceName": {
+                    "referenceName": "LS_SQLPool_DataSolutions",
+                    "type": "LinkedServiceReference"
+                },
+                "typeProperties": {
+                    "scripts": [
+                        {
+                            "type": "Query",
+                            "text": "INSERT INTO GameAnalytics.DimGame (GameName, IsCurrent, EffectiveDate)\nSELECT DISTINCT s.Game, 1, GETDATE()\nFROM GameAnalytics.StagingPlayerScores s\nLEFT JOIN GameAnalytics.DimGame d ON s.Game = d.GameName\nWHERE d.GameName IS NULL;\n"
+                        }
+                    ],
+                    "scriptBlockExecutionTimeout": "02:00:00"
+                }
+            },
+            {
+                "name": "InsertFactScores",
+                "type": "Script",
+                "dependsOn": [
+                    {
+                        "activity": "InsertDimGame",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "linkedServiceName": {
+                    "referenceName": "LS_SQLPool_DataSolutions",
+                    "type": "LinkedServiceReference"
+                },
+                "typeProperties": {
+                    "scripts": [
+                        {
+                            "type": "Query",
+                            "text": "INSERT INTO GameAnalytics.FactPlayerScores (GameplayID, PlayerID, GameID, Score, Timestamp)\nSELECT\n    s.GameplayID,\n    dp.PlayerID,\n    dg.GameID,\n    s.Score,\n    s.Timestamp\nFROM GameAnalytics.StagingPlayerScores s\nINNER JOIN GameAnalytics.DimPlayer dp ON s.Player = dp.PlayerName\nINNER JOIN GameAnalytics.DimGame dg ON s.Game = dg.GameName;\n"
+                        }
+                    ],
+                    "scriptBlockExecutionTimeout": "02:00:00"
+                }
+            },
+            {
+                "name": "ClearStaging",
+                "type": "Script",
+                "dependsOn": [
+                    {
+                        "activity": "InsertFactScores",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "linkedServiceName": {
+                    "referenceName": "LS_SQLPool_DataSolutions",
+                    "type": "LinkedServiceReference"
+                },
+                "typeProperties": {
+                    "scripts": [
+                        {
+                            "type": "Query",
+                            "text": "TRUNCATE TABLE GameAnalytics.StagingPlayerScores;\n"
+                        }
+                    ],
+                    "scriptBlockExecutionTimeout": "02:00:00"
+                }
+            }
+        ],
+        "annotations": [],
+        "lastPublishTime": "2024-10-14T01:50:56Z"
+    },
+    "type": "Microsoft.Synapse/workspaces/pipelines"
+}
